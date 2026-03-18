@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Data artifacts
+*.csv
+*.parquet
+*.zip
+*.xlsx
+*.xls
+*.html
+*.twb
+*.twbx
+
+# Local outputs
+outputs/
+logs/
