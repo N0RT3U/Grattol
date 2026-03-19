@@ -4,6 +4,39 @@ from pathlib import Path
 import pandas as pd
 
 
+def memory_usage_mb(df: pd.DataFrame) -> float:
+    return df.memory_usage(deep=True).sum() / 1024**2
+
+
+def optimize_dtypes(df: pd.DataFrame) -> tuple[pd.DataFrame, float, float, float]:
+    before_mb = memory_usage_mb(df)
+
+    object_cols = df.select_dtypes(include=["object", "string"]).columns
+    for col in object_cols:
+        non_null = df[col].dropna()
+        if non_null.empty:
+            continue
+        unique_ratio = non_null.nunique(dropna=True) / len(non_null)
+        if unique_ratio <= 0.5:
+            df[col] = df[col].astype("category")
+
+    int_cols = df.select_dtypes(include=["integer"]).columns
+    for col in int_cols:
+        series = df[col]
+        if series.min() >= 0:
+            df[col] = pd.to_numeric(series, downcast="unsigned")
+        else:
+            df[col] = pd.to_numeric(series, downcast="integer")
+
+    float_cols = df.select_dtypes(include=["float"]).columns
+    for col in float_cols:
+        df[col] = pd.to_numeric(df[col], downcast="float")
+
+    after_mb = memory_usage_mb(df)
+    reduction_pct = 0.0 if before_mb == 0 else (before_mb - after_mb) / before_mb * 100
+    return df, before_mb, after_mb, reduction_pct
+
+
 TARGET_BRANDS = [
     "runail",
     "lianail",
@@ -210,6 +243,12 @@ def main() -> int:
         df["event_type"] = df["event_type"].astype("category")
     if "brand" in df.columns:
         df["brand"] = df["brand"].astype("category")
+
+    df, before_mb, after_mb, reduction_pct = optimize_dtypes(df)
+    print(
+        f"Memory optimized: {before_mb:.2f} MB -> {after_mb:.2f} MB "
+        f"({reduction_pct:.1f}% reduction)"
+    )
 
     if args.output:
         output_path = Path(args.output)
