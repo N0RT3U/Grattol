@@ -23,6 +23,7 @@ Thumbs.db
 *.html
 *.twb
 *.twbx
+!docs/reports/grattol_forecast/*.csv
 
 # Local outputs
 outputs/
